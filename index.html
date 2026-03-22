@@ -215,7 +215,6 @@
 
 <div id="controls">
   <button id="btn-reset">Reset Card</button>
-  <button id="btn-admin">Edit Card (Admin)</button>
 </div>
 
 <div id="win-overlay">
@@ -225,7 +224,7 @@
 </div>
 
 <footer>
-  Stream Bingo &mdash; <a href="admin.html">Admin Panel</a>
+  Stream Bingo
 </footer>
 
 <script>
@@ -355,11 +354,7 @@
     renderGrid();
   });
 
-  document.getElementById('btn-admin').addEventListener('click', () => {
-    window.location.href = 'admin.html';
-  });
-
-  document.getElementById('btn-dismiss').addEventListener('click', () => {
+document.getElementById('btn-dismiss').addEventListener('click', () => {
     document.getElementById('win-overlay').classList.remove('show');
   });
 
