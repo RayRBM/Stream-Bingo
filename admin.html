@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bingo Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a1a;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ff6ec7, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .panel {
+      background: #22222a;
+      border: 1.5px solid #3a3a40;
+      border-radius: 14px;
+      padding: 20px;
+      width: min(640px, 100%);
+      margin-bottom: 20px;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #a855f7;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .row label {
+      width: 90px;
+      font-size: 0.85rem;
+      color: #aaa;
+      flex-shrink: 0;
+    }
+
+    input[type="text"], input[type="date"], textarea {
+      flex: 1;
+      background: #2a2a2e;
+      border: 1.5px solid #3a3a40;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, input[type="date"]:focus, textarea:focus {
+      border-color: #a855f7;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .item-wrap {
+      position: relative;
+    }
+
+    .item-wrap .cell-num {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: 0.6rem;
+      color: #666;
+      pointer-events: none;
+    }
+
+    .item-input {
+      width: 100%;
+      background: #2a2a2e;
+      border: 1.5px solid #3a3a40;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 20px 6px 6px;
+      resize: none;
+      outline: none;
+      line-height: 1.3;
+      min-height: 72px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .item-input:focus { border-color: #a855f7; }
+
+    .item-input.is-free {
+      background: linear-gradient(135deg, #3d1a5e, #1e1b4b);
+      border-color: #a855f7;
+      color: #d8b4fe;
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:active { transform: scale(0.97); }
+
+    #btn-save {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+    }
+
+    #btn-preview {
+      background: #3a3a40;
+      color: #ccc;
+    }
+
+    #btn-clear-local {
+      background: #4a1a1a;
+      color: #f87171;
+    }
+
+    #btn-export {
+      background: #1a3a2a;
+      color: #4ade80;
+    }
+
+    #json-out {
+      margin-top: 12px;
+      background: #111;
+      border: 1.5px solid #3a3a40;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: #a3e635;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    #feedback {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 12px;
+      display: none;
+    }
+
+    #feedback.success { background: #14532d; color: #4ade80; display: block; }
+    #feedback.error   { background: #450a0a; color: #f87171; display: block; }
+
+    .tip {
+      background: #1e1b30;
+      border: 1.5px solid #3730a3;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.82rem;
+      color: #a5b4fc;
+      width: min(640px, 100%);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .tip strong { color: #c7d2fe; }
+
+    code {
+      background: #111827;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      color: #a3e635;
+    }
+
+    a.back { color: #a855f7; text-decoration: none; font-size: 0.85rem; margin-bottom: 16px; display: inline-block; }
+    a.back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h1>Bingo Admin</h1>
+<p class="subtitle">Edit today's bingo card</p>
+
+<a class="back" href="index.html">← Back to Bingo</a>
+
+<div class="tip">
+  <strong>How it works:</strong><br>
+  1. Edit the card below and click <strong>Save &amp; Go Live</strong> — viewers will see the new card instantly (saved in their browser).<br>
+  2. For a permanent update everyone sees, also click <strong>Export JSON</strong>, copy the output, and replace <code>bingo-data.json</code> in your repo.<br>
+  3. The center cell (position 13) is always the <strong>FREE</strong> square.
+</div>
+
+<div class="panel">
+  <h2>Card Settings</h2>
+  <div class="row">
+    <label>Card ID / Date</label>
+    <input type="text" id="card-id" placeholder="e.g. 2026-03-22" />
+  </div>
+  <div class="row">
+    <label>Title</label>
+    <input type="text" id="card-title" placeholder="Stream Bingo" />
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Bingo Squares (5×5 grid)</h2>
+  <div class="items-grid" id="items-grid"></div>
+
+  <div class="btn-row">
+    <button id="btn-save">Save &amp; Go Live</button>
+    <button id="btn-preview">Preview Card</button>
+    <button id="btn-export">Export JSON</button>
+    <button id="btn-clear-local">Clear Local Override</button>
+  </div>
+
+  <div id="feedback"></div>
+  <pre id="json-out"></pre>
+</div>
+
+<script>
+  const FREE_INDEX = 12; // center of 5x5
+
+  let cardData = null;
+
+  function showFeedback(msg, type) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = type;
+    setTimeout(() => { el.className = ''; el.style.display = 'none'; }, 3000);
+  }
+
+  function buildGrid(items) {
+    const grid = document.getElementById('items-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 25; i++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'item-wrap';
+
+      const num = document.createElement('span');
+      num.className = 'cell-num';
+      num.textContent = i + 1;
+
+      const ta = document.createElement('textarea');
+      ta.className = 'item-input';
+      ta.dataset.index = i;
+      ta.value = items[i] || '';
+
+      if (i === FREE_INDEX) {
+        ta.value = 'FREE';
+        ta.classList.add('is-free');
+      }
+
+      ta.addEventListener('input', () => {
+        if (i === FREE_INDEX) ta.value = 'FREE'; // lock free square
+      });
+
+      wrap.appendChild(num);
+      wrap.appendChild(ta);
+      grid.appendChild(wrap);
+    }
+  }
+
+  function getFormData() {
+    const items = [];
+    document.querySelectorAll('.item-input').forEach(ta => {
+      items.push(ta.value.trim() || '?');
+    });
+    return {
+      id: document.getElementById('card-id').value.trim() || new Date().toISOString().slice(0, 10),
+      title: document.getElementById('card-title').value.trim() || 'Stream Bingo',
+      items
+    };
+  }
+
+  async function loadCard() {
+    // Try local admin override first, then bingo-data.json
+    const local = localStorage.getItem('bingo_admin_card');
+    if (local) {
+      try { cardData = JSON.parse(local); } catch {}
+    }
+    if (!cardData) {
+      try {
+        const res = await fetch('bingo-data.json?t=' + Date.now());
+        cardData = await res.json();
+      } catch {
+        cardData = { id: new Date().toISOString().slice(0, 10), title: 'Stream Bingo', items: Array(25).fill('') };
+        cardData.items[FREE_INDEX] = 'FREE';
+      }
+    }
+
+    document.getElementById('card-id').value = cardData.id || '';
+    document.getElementById('card-title').value = cardData.title || '';
+    buildGrid(cardData.items);
+  }
+
+  document.getElementById('btn-save').addEventListener('click', () => {
+    const data = getFormData();
+    localStorage.setItem('bingo_admin_card', JSON.stringify(data));
+    // Also clear old player states so everyone starts fresh on new card
+    // (players' own state will be keyed per card id, so a new id auto-resets them)
+    showFeedback('Card saved locally! Viewers on this device will see the new card. Export JSON to update for everyone.', 'success');
+  });
+
+  document.getElementById('btn-preview').addEventListener('click', () => {
+    const data = getFormData();
+    localStorage.setItem('bingo_admin_card', JSON.stringify(data));
+    window.location.href = 'index.html';
+  });
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const data = getFormData();
+    const json = JSON.stringify(data, null, 2);
+    const out = document.getElementById('json-out');
+    out.textContent = json;
+    out.style.display = 'block';
+
+    // Also copy to clipboard
+    navigator.clipboard.writeText(json).then(() => {
+      showFeedback('JSON copied to clipboard! Paste it into bingo-data.json in your repo.', 'success');
+    }).catch(() => {
+      showFeedback('JSON shown below — copy it into bingo-data.json in your repo.', 'success');
+    });
+  });
+
+  document.getElementById('btn-clear-local').addEventListener('click', () => {
+    if (!confirm('This will remove the local card override and reload from bingo-data.json. Continue?')) return;
+    localStorage.removeItem('bingo_admin_card');
+    cardData = null;
+    loadCard();
+    showFeedback('Local override cleared. Loaded from bingo-data.json.', 'success');
+  });
+
+  loadCard();
+</script>
+</body>
+</html>
