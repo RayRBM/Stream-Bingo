@@ -146,8 +146,8 @@
       color: #fff;
     }
 
-    #btn-admin {
-      background: linear-gradient(135deg, #a855f7, #6366f1);
+    #btn-edit {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
       color: #fff;
     }
 
@@ -202,10 +202,95 @@
       font-size: 0.75rem;
     }
 
-    footer a {
-      color: #7c3aed;
-      text-decoration: none;
+    /* Edit modal */
+    #edit-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
     }
+
+    #edit-modal.show { display: flex; }
+
+    #edit-box {
+      background: #22222a;
+      border: 1.5px solid #3a3a40;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(540px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    #edit-box h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #edit-box p.hint {
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    #edit-textarea {
+      width: 100%;
+      min-height: 320px;
+      background: #111;
+      border: 1.5px solid #3a3a40;
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      padding: 14px;
+      resize: vertical;
+      outline: none;
+      line-height: 1.7;
+    }
+
+    #edit-textarea:focus { border-color: #6366f1; }
+
+    .edit-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #btn-edit-save {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: #fff;
+      flex: 1;
+    }
+
+    #btn-edit-import {
+      background: #1a3a2a;
+      color: #4ade80;
+    }
+
+    #btn-edit-export {
+      background: #1a2a3a;
+      color: #7dd3fc;
+    }
+
+    #btn-edit-cancel {
+      background: #3a3a40;
+      color: #ccc;
+    }
+
+    #edit-file-input { display: none; }
   </style>
 </head>
 <body>
@@ -221,6 +306,23 @@
 <div id="controls">
   <button id="btn-reset">Reset Card</button>
   <button id="btn-scramble">Scramble</button>
+  <button id="btn-edit">Edit Squares</button>
+</div>
+
+<!-- Edit modal -->
+<div id="edit-modal">
+  <div id="edit-box">
+    <h2>Edit Your Card</h2>
+    <p class="hint">One square per line — 25 lines total. Line 13 is always FREE and can't be changed. Changes are saved locally to your browser only.</p>
+    <textarea id="edit-textarea" spellcheck="false"></textarea>
+    <div class="edit-btn-row">
+      <button id="btn-edit-save">Save & Apply</button>
+      <button id="btn-edit-import">Import .txt</button>
+      <button id="btn-edit-export">Export .txt</button>
+      <button id="btn-edit-cancel">Cancel</button>
+    </div>
+    <input type="file" id="edit-file-input" accept=".txt,.json" />
+  </div>
 </div>
 
 <div id="win-overlay">
@@ -235,11 +337,12 @@
 
 <script>
   const LINES = [
-    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24], // rows
-    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24], // cols
-    [0,6,12,18,24],[4,8,12,16,20]  // diagonals
+    [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
+    [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
+    [0,6,12,18,24],[4,8,12,16,20]
   ];
 
+  const FREE_INDEX = 12;
   let cardData = null;
   let marked = new Set();
   let wonLines = new Set();
@@ -295,10 +398,8 @@
   }
 
   function highlightBingoLines() {
-    // Remove old highlights
     document.querySelectorAll('.cell.bingo-line').forEach(c => c.classList.remove('bingo-line'));
     wonLines.clear();
-    let newBingo = false;
 
     LINES.forEach(line => {
       if (line.every(i => marked.has(i))) {
@@ -306,7 +407,6 @@
         line.forEach(i => {
           document.querySelector(`.cell[data-index="${i}"]`)?.classList.add('bingo-line');
         });
-        newBingo = true;
       }
     });
 
@@ -324,30 +424,31 @@
   }
 
   async function loadCard() {
-    // Check if admin has a local override
     const local = localStorage.getItem('bingo_admin_card');
-    if (local) {
-      try {
-        cardData = JSON.parse(local);
-      } catch {}
+    const userLocal = localStorage.getItem('bingo_user_card');
+    if (userLocal) {
+      try { cardData = JSON.parse(userLocal); } catch {}
     }
-
+    if (!cardData && local) {
+      try { cardData = JSON.parse(local); } catch {}
+    }
     if (!cardData) {
       try {
         const res = await fetch('bingo-data.json?t=' + Date.now());
         cardData = await res.json();
       } catch {
         cardData = { id: 'default', title: 'Stream Bingo', items: Array(25).fill('?') };
+        cardData.items[FREE_INDEX] = 'FREE';
       }
     }
 
     document.getElementById('card-title').textContent = cardData.title || 'Stream Bingo';
     document.getElementById('card-date').textContent = 'Card: ' + (cardData.id || '');
-
     loadState();
     renderGrid();
   }
 
+  // Scramble
   document.getElementById('btn-scramble').addEventListener('click', () => {
     const freeIndex = cardData.items.findIndex(t => t.trim().toUpperCase() === 'FREE');
     const nonFree = cardData.items.filter((_, i) => i !== freeIndex);
@@ -364,11 +465,11 @@
     renderGrid();
   });
 
+  // Reset
   document.getElementById('btn-reset').addEventListener('click', () => {
     if (!confirm('Reset your bingo card? Your marks will be cleared.')) return;
     marked = new Set();
     alreadyWon = false;
-    // re-mark FREE squares
     cardData.items.forEach((t, i) => {
       if (t.trim().toUpperCase() === 'FREE') marked.add(i);
     });
@@ -376,7 +477,69 @@
     renderGrid();
   });
 
-document.getElementById('btn-dismiss').addEventListener('click', () => {
+  // Edit modal
+  document.getElementById('btn-edit').addEventListener('click', () => {
+    const lines = cardData.items.map((t, i) => i === FREE_INDEX ? 'FREE (locked)' : t);
+    document.getElementById('edit-textarea').value = lines.join('\n');
+    document.getElementById('edit-modal').classList.add('show');
+  });
+
+  document.getElementById('btn-edit-cancel').addEventListener('click', () => {
+    document.getElementById('edit-modal').classList.remove('show');
+  });
+
+  document.getElementById('btn-edit-save').addEventListener('click', () => {
+    const lines = document.getElementById('edit-textarea').value.split('\n').map(l => l.trim());
+    if (lines.length < 25) {
+      alert(`Need 25 lines, got ${lines.length}. Add more squares.`);
+      return;
+    }
+    const items = lines.slice(0, 25);
+    items[FREE_INDEX] = 'FREE';
+    cardData = { ...cardData, items };
+    localStorage.setItem('bingo_user_card', JSON.stringify(cardData));
+    marked = new Set();
+    alreadyWon = false;
+    marked.add(FREE_INDEX);
+    saveState();
+    renderGrid();
+    document.getElementById('edit-modal').classList.remove('show');
+  });
+
+  // Import .txt
+  document.getElementById('btn-edit-import').addEventListener('click', () => {
+    document.getElementById('edit-file-input').click();
+  });
+
+  document.getElementById('edit-file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const padded = lines.slice(0, 25);
+      while (padded.length < 25) padded.push('?');
+      padded[FREE_INDEX] = 'FREE (locked)';
+      document.getElementById('edit-textarea').value = padded.join('\n');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // Export .txt
+  document.getElementById('btn-edit-export').addEventListener('click', () => {
+    const items = cardData.items.slice();
+    const text = items.join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bingo-card.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('btn-dismiss').addEventListener('click', () => {
     document.getElementById('win-overlay').classList.remove('show');
   });
 
