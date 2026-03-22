@@ -141,6 +141,11 @@
       color: #ccc;
     }
 
+    #btn-scramble {
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: #fff;
+    }
+
     #btn-admin {
       background: linear-gradient(135deg, #a855f7, #6366f1);
       color: #fff;
@@ -215,6 +220,7 @@
 
 <div id="controls">
   <button id="btn-reset">Reset Card</button>
+  <button id="btn-scramble">Scramble</button>
 </div>
 
 <div id="win-overlay">
@@ -341,6 +347,22 @@
     loadState();
     renderGrid();
   }
+
+  document.getElementById('btn-scramble').addEventListener('click', () => {
+    const freeIndex = cardData.items.findIndex(t => t.trim().toUpperCase() === 'FREE');
+    const nonFree = cardData.items.filter((_, i) => i !== freeIndex);
+    for (let i = nonFree.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [nonFree[i], nonFree[j]] = [nonFree[j], nonFree[i]];
+    }
+    nonFree.splice(freeIndex, 0, cardData.items[freeIndex]);
+    cardData.items = nonFree;
+    marked = new Set();
+    alreadyWon = false;
+    if (freeIndex !== -1) marked.add(freeIndex);
+    saveState();
+    renderGrid();
+  });
 
   document.getElementById('btn-reset').addEventListener('click', () => {
     if (!confirm('Reset your bingo card? Your marks will be cleared.')) return;
