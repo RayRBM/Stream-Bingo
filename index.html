@@ -265,7 +265,7 @@
       const isFree = text.trim().toUpperCase() === 'FREE';
       if (isFree) {
         cell.classList.add('free');
-        cell.textContent = text + '\n(FREE)';
+        cell.textContent = 'FREE';
         marked.add(i);
       } else {
         cell.textContent = text;
