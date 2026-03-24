@@ -141,11 +141,6 @@
       color: #ccc;
     }
 
-    #btn-admin {
-      background: linear-gradient(135deg, #a855f7, #6366f1);
-      color: #fff;
-    }
-
     /* Win overlay */
     #win-overlay {
       display: none;
@@ -215,7 +210,6 @@
 
 <div id="controls">
   <button id="btn-reset">Reset Card</button>
-  <button id="btn-admin">Edit Card (Admin)</button>
 </div>
 
 <div id="win-overlay">
@@ -225,7 +219,7 @@
 </div>
 
 <footer>
-  Stream Bingo &mdash; <a href="admin.html">Admin Panel</a>
+  Stream Bingo
 </footer>
 
 <script>
@@ -353,10 +347,6 @@
     });
     saveState();
     renderGrid();
-  });
-
-  document.getElementById('btn-admin').addEventListener('click', () => {
-    window.location.href = 'admin.html';
   });
 
   document.getElementById('btn-dismiss').addEventListener('click', () => {

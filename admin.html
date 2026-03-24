@@ -222,9 +222,93 @@
 
     a.back { color: #a855f7; text-decoration: none; font-size: 0.85rem; margin-bottom: 16px; display: inline-block; }
     a.back:hover { text-decoration: underline; }
+
+    #auth-gate {
+      position: fixed;
+      inset: 0;
+      background: #1a1a1a;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    #auth-gate h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff6ec7, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #auth-gate input {
+      background: #2a2a2e;
+      border: 1.5px solid #3a3a40;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      padding: 10px 16px;
+      outline: none;
+      width: 260px;
+      text-align: center;
+    }
+
+    #auth-gate input:focus { border-color: #a855f7; }
+
+    #auth-gate button {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+      padding: 10px 28px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #auth-error {
+      color: #f87171;
+      font-size: 0.85rem;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 <body>
+
+<div id="auth-gate">
+  <h2>Admin Access</h2>
+  <input type="password" id="auth-input" placeholder="Enter password" />
+  <div id="auth-error"></div>
+  <button onclick="checkAuth()">Unlock</button>
+</div>
+
+<script>
+  (function() {
+    if (sessionStorage.getItem('bingo_auth') === '1') {
+      document.getElementById('auth-gate').style.display = 'none';
+    }
+    document.getElementById('auth-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkAuth();
+    });
+  })();
+
+  async function checkAuth() {
+    const val = document.getElementById('auth-input').value;
+    const hash = Array.from(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)))
+    ).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (hash === 'eda34eebb34953fb0b41136386703548132e58f607ab05793cf3d241fba3662a') {
+      sessionStorage.setItem('bingo_auth', '1');
+      document.getElementById('auth-gate').style.display = 'none';
+    } else {
+      document.getElementById('auth-error').textContent = 'Wrong password.';
+      document.getElementById('auth-input').value = '';
+    }
+  }
+</script>
 
 <h1>Bingo Admin</h1>
 <p class="subtitle">Edit today's bingo card</p>
