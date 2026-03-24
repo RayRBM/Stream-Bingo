@@ -331,7 +331,7 @@
     }
 
     document.getElementById('card-title').textContent = cardData.title || 'Stream Bingo';
-    document.getElementById('card-date').textContent = 'Card: ' + (cardData.id || '');
+    document.getElementById('card-date').textContent = 'Card: ' + new Date().toISOString().slice(0, 10);
 
     loadState();
     renderGrid();
