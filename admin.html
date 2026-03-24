@@ -295,9 +295,12 @@
     });
   })();
 
-  function checkAuth() {
+  async function checkAuth() {
     const val = document.getElementById('auth-input').value;
-    if (val === '123@@!!##$!!bingo') {
+    const hash = Array.from(
+      new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(val)))
+    ).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (hash === 'eda34eebb34953fb0b41136386703548132e58f607ab05793cf3d241fba3662a') {
       sessionStorage.setItem('bingo_auth', '1');
       document.getElementById('auth-gate').style.display = 'none';
     } else {
